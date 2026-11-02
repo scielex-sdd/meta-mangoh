@@ -3,6 +3,9 @@ HOMEPAGE = "https://mangoh.io"
 LICENSE = "MPL-2.0"
 LIC_FILES_CHKSUM = "file://../cywifi.sh;startline=2;endline=2;md5=4ab7b147102bbb17e696589e8e19383e"
 
+# The in-kernel driver (kernel 4.14) replaces the old backports build.
+RDEPENDS_${PN} += "kernel-module-brcmfmac"
+
 FILES_${PN} = " \
     ${base_libdir}/firmware/brcm/brcmfmac43430-sdio.bin \
     ${base_libdir}/firmware/brcm/brcmfmac43430-sdio.clm_blob \

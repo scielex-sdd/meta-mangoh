@@ -1,0 +1,55 @@
+From: Shane de Deuge <shane@scielex.com.au>
+Subject: [PATCH] arm64: dts: mangoh-yellow: power the Cypress WiFi on sdhc_2
+
+Describe WL_REG_ON (SX1509 GPIO 1) as the SDIO slot's supply so the MMC core
+powers the CYW43430 before scanning and the kernel owns the line, instead of
+a script toggling it from userspace through a Legato-loaded module.
+
+Upstream-Status: Inappropriate [board specific]
+---
+--- a/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
++++ b/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/gpio/gpio.h>
+ 
+ / {
+ 	model = "Sierra Wireless, Inc. MDM 9xxx WP series - mangOH Yellow";
+@@ -78,3 +79,35 @@
+ 		};
+ 	};
+ };
++
++/*
++ * Cypress CYW43430 WiFi/Bluetooth, on the WP's SDIO port (sdhc_2).
++ *
++ * WL_REG_ON is GPIO 1 of the SX1509 expander. It is described as the SDIO slot's supply, so the
++ * MMC core powers the chip before it scans the bus and powers it down when the host releases it;
++ * nothing else touches the line. This is the 4.14 equivalent of the old cywifi.sh sequence
++ * (WL_REG_ON high, wait, then load sdhci-msm), and it keeps the chip's power under the kernel's
++ * control at shutdown. Not covered: DV3 boards, which use WP GPIO33 for WL_REG_ON.
++ */
++/ {
++	wlan_en_vreg: wlan-en-vreg {
++		compatible = "regulator-fixed";
++		regulator-name = "wlan-en";
++		/* matches the qcom,vdd-voltage-level set for sdhc_2 in mdm9607-wp76xx.dtsi */
++		regulator-min-microvolt = <2850000>;
++		regulator-max-microvolt = <2850000>;
++		gpio = <&sx1509 1 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++		/* the old script waited 2 s after WL_REG_ON; the chip needs well under that */
++		startup-delay-us = <250000>;
++	};
++};
++
++&sdhc_2 {
++	vdd-supply = <&wlan_en_vreg>;
++	/* a soldered-down SDIO chip: no card detect, scan once at power-up */
++	qcom,nonremovable;
++	keep-power-in-suspend;
++	pinctrl-0 = <&sdc2_clk_on &sdc2_cmd_on &sdc2_data_on>;
++	status = "ok";
++};
