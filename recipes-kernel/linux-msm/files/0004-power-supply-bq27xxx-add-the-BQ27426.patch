@@ -1,0 +1,115 @@
+From: Shane de Deuge <shane@scielex.com.au>
+Subject: [PATCH] power: supply: bq27xxx: add the BQ27426
+
+The mangOH Yellow's fuel gauge is a BQ27426 (DEVICE_TYPE 0x0426). It has the BQ27421's registers
+but does not answer at 0x3c, the BQ27421's design capacity, which as a BQ27421 fails
+charge_full_design and logs an error at each power supply event. Leave that property out, and leave
+data memory alone: nothing is ever written to the gauge. The name and compatible are mainline's.
+
+Upstream-Status: Inappropriate [kernel 4.14 only]
+---
+--- a/include/linux/power/bq27xxx_battery.h
++++ b/include/linux/power/bq27xxx_battery.h
+@@ -25,6 +25,7 @@
+ 	BQ27545, /* bq27545 */
+ 	BQ27421, /* bq27421, bq27425, bq27441, bq27621 */
+ 	BQ27425,
++	BQ27426,
+ 	BQ27441,
+ 	BQ27621,
+ };
+--- a/drivers/power/supply/bq27xxx_battery.c
++++ b/drivers/power/supply/bq27xxx_battery.c
+@@ -406,6 +406,27 @@
+ 		[BQ27XXX_REG_DCAP] = 0x3c,
+ 		[BQ27XXX_REG_AP] = 0x18,
+ 		BQ27XXX_DM_REG_ROWS,
++	},
++	/* The bq27421's, but the chip does not answer at 0x3c */
++	bq27426_regs[BQ27XXX_REG_MAX] = {
++		[BQ27XXX_REG_CTRL] = 0x00,
++		[BQ27XXX_REG_TEMP] = 0x02,
++		[BQ27XXX_REG_INT_TEMP] = 0x1e,
++		[BQ27XXX_REG_VOLT] = 0x04,
++		[BQ27XXX_REG_AI] = 0x10,
++		[BQ27XXX_REG_FLAGS] = 0x06,
++		[BQ27XXX_REG_TTE] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_TTF] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_TTES] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_TTECP] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_NAC] = 0x08,
++		[BQ27XXX_REG_FCC] = 0x0e,
++		[BQ27XXX_REG_CYCT] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_AE] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_SOC] = 0x1c,
++		[BQ27XXX_REG_DCAP] = INVALID_REG_ADDR,
++		[BQ27XXX_REG_AP] = 0x18,
++		BQ27XXX_DM_REG_ROWS,
+ 	};
+ #define bq27425_regs bq27421_regs
+ #define bq27441_regs bq27421_regs
+@@ -630,6 +651,19 @@
+ 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+ 	POWER_SUPPLY_PROP_MANUFACTURER,
+ };
++static enum power_supply_property bq27426_props[] = {
++	POWER_SUPPLY_PROP_STATUS,
++	POWER_SUPPLY_PROP_PRESENT,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++	POWER_SUPPLY_PROP_CURRENT_NOW,
++	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
++	POWER_SUPPLY_PROP_TEMP,
++	POWER_SUPPLY_PROP_TECHNOLOGY,
++	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
++	POWER_SUPPLY_PROP_MANUFACTURER,
++};
+ #define bq27425_props bq27421_props
+ #define bq27441_props bq27421_props
+ #define bq27621_props bq27421_props
+@@ -700,6 +734,8 @@
+ 	[BQ27XXX_DM_TERMINATE_VOLTAGE] = { 82, 18, 2, 2800,  3700 },
+ };
+ 
++#define bq27426_dm_regs 0
++
+ #if 0 /* not yet tested */
+ #define bq27441_dm_regs bq27421_dm_regs
+ #else
+@@ -760,6 +796,7 @@
+ 	[BQ27545]   = BQ27XXX_DATA(bq27545,   0x04143672, BQ27XXX_O_OTDC),
+ 	[BQ27421]   = BQ27XXX_DATA(bq27421,   0x80008000, BQ27XXX_O_UTOT | BQ27XXX_O_CFGUP | BQ27XXX_O_RAM),
+ 	[BQ27425]   = BQ27XXX_DATA(bq27425,   0x04143672, BQ27XXX_O_UTOT | BQ27XXX_O_CFGUP),
++	[BQ27426]   = BQ27XXX_DATA(bq27426,   0         , BQ27XXX_O_UTOT),
+ 	[BQ27441]   = BQ27XXX_DATA(bq27441,   0x80008000, BQ27XXX_O_UTOT | BQ27XXX_O_CFGUP | BQ27XXX_O_RAM),
+ 	[BQ27621]   = BQ27XXX_DATA(bq27621,   0x80008000, BQ27XXX_O_UTOT | BQ27XXX_O_CFGUP | BQ27XXX_O_RAM),
+ };
+--- a/drivers/power/supply/bq27xxx_battery_i2c.c
++++ b/drivers/power/supply/bq27xxx_battery_i2c.c
+@@ -248,6 +248,7 @@
+ 	{ "bq27545", BQ27545 },
+ 	{ "bq27421", BQ27421 },
+ 	{ "bq27425", BQ27425 },
++	{ "bq27426", BQ27426 },
+ 	{ "bq27441", BQ27441 },
+ 	{ "bq27621", BQ27621 },
+ 	{},
+@@ -278,6 +279,7 @@
+ 	{ .compatible = "ti,bq27545" },
+ 	{ .compatible = "ti,bq27421" },
+ 	{ .compatible = "ti,bq27425" },
++	{ .compatible = "ti,bq27426" },
+ 	{ .compatible = "ti,bq27441" },
+ 	{ .compatible = "ti,bq27621" },
+ 	{},
+--- a/Documentation/devicetree/bindings/power/supply/bq27xxx.txt
++++ b/Documentation/devicetree/bindings/power/supply/bq27xxx.txt
+@@ -24,6 +24,7 @@
+  * "ti,bq27545" - BQ27545
+  * "ti,bq27421" - BQ27421
+  * "ti,bq27425" - BQ27425
++ * "ti,bq27426" - BQ27426
+  * "ti,bq27441" - BQ27441
+  * "ti,bq27621" - BQ27621
+ - reg: integer, I2C address of the fuel gauge.

@@ -1,0 +1,95 @@
+From: Shane de Deuge <shane@scielex.com.au>
+Subject: [PATCH] arm64: dts: mangoh-yellow: describe the board's I2C devices
+
+Add the EEPROM, IMU, environmental sensor, light sensor, fuel gauge, charger and RTC, at the
+addresses and I2C switch channels found on a Rev 1.0 board, and disable the reference board's
+BMI160 node, which stops the real one being registered.
+
+Upstream-Status: Inappropriate [board specific]
+---
+--- a/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
++++ b/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
+@@ -43,6 +43,23 @@
+ 
+ 
+ &i2c_4 {
++	/*
++	 * The reference board's IMU, from mdm9607.dtsi. Nothing answers at 0x68 on this bus, and while
++	 * this node exists the I2C core refuses the real IMU at the same address behind the switch.
++	 * Its pinctrl would also take WP GPIO33 and GPIO42.
++	 */
++	bmi160@68 {
++		status = "disabled";
++	};
++
++	/* The board's name and revision. The bootloader reads it too, to choose this device tree. */
++	eeprom@50 {
++		compatible = "atmel,24c32";
++		reg = <0x50>;
++		pagesize = <32>;
++		read-only;
++	};
++
+ 	i2c-switch@71 {
+ 		compatible = "nxp,pca9546";
+ 		reg = <0x71>;
+@@ -58,11 +75,46 @@
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <1>;
++
++			imu@68 {
++				compatible = "bosch,bmi160";
++				reg = <0x68>;
++			};
++
++			environmental-sensor@76 {
++				compatible = "bosch,bme680";
++				reg = <0x76>;
++			};
+ 		};
+ 		i2c@2 {
+ 			#address-cells = <1>;
+ 			#size-cells = <0>;
+ 			reg = <2>;
++
++			light-sensor@44 {
++				compatible = "ti,opt3002";
++				reg = <0x44>;
++			};
++
++			fuel-gauge@55 {
++				compatible = "ti,bq27426";
++				reg = <0x55>;
++			};
++
++			/*
++			 * The input limits the chip comes up with on this board: its driver's own default
++			 * input current limit is 2.4 A, more than a USB host is asked for. No watchdog: the
++			 * chip keeps these settings, rather than going back to its defaults after 40 s
++			 * without a host. Without a monitored-battery the charge limits stay the chip's
++			 * defaults, 2.04 A to 4.208 V.
++			 */
++			charger@6b {
++				compatible = "ti,bq25601";
++				reg = <0x6b>;
++				input-current-limit-microamp = <500000>;
++				input-voltage-limit-microvolt = <4500000>;
++				ti,watchdog-timeout-ms = <0>;
++			};
+ 		};
+ 		i2c@3 {
+ 			#address-cells = <1>;
+@@ -76,6 +128,12 @@
+ 				gpio-controller;
+ 				#gpio-cells = <2>;
+ 			};
++
++			/* rtc1: the kernel still sets the system clock from the PMIC's rtc0 at boot. */
++			rtc@51 {
++				compatible = "nxp,pcf85063";
++				reg = <0x51>;
++			};
+ 		};
+ 	};
+ };

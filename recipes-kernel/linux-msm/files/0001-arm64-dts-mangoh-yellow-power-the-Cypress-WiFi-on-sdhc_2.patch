@@ -29,7 +29,7 @@ Upstream-Status: Inappropriate [board specific]
 + * MMC core powers the chip before it scans the bus and powers it down when the host releases it;
 + * nothing else touches the line. This is the 4.14 equivalent of the old cywifi.sh sequence
 + * (WL_REG_ON high, wait, then load sdhci-msm), and it keeps the chip's power under the kernel's
-+ * control at shutdown. Not covered: DV3 boards, which use WP GPIO33 for WL_REG_ON.
++ * control at shutdown. DV3 boards have it on WP GPIO33 instead: see MANGOH_YELLOW_REV.
 + */
 +/ {
 +	wlan_en_vreg: wlan-en-vreg {

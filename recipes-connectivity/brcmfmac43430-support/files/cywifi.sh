@@ -3,13 +3,10 @@
 #
 # Broadcom/Cypress chip startup for mangOH Yellow (Release 15, kernel 4.14)
 #
-# The chip's power (WL_REG_ON, GPIO 1 of the SX1509 expander) and its SDIO slot (sdhc_2) are
-# described in the device tree, so the kernel powers the chip, finds it on the bus and owns
-# WL_REG_ON from then on. brcmfmac is loaded at boot. This script only brings wlan0 up and down
-# for Legato's WiFi service, which calls it from pa_wifi.sh.
-#
-# Not handled: mangOH Yellow DV3 boards, which use WP GPIO33 for WL_REG_ON instead of the
-# expander.
+# The chip's power (WL_REG_ON: GPIO 1 of the SX1509 expander, or WP GPIO33 in an image built for
+# DV3 boards) and its SDIO slot (sdhc_2) are described in the device tree, so the kernel powers the
+# chip, finds it on the bus and owns WL_REG_ON from then on. brcmfmac is loaded at boot. This script
+# only brings wlan0 up and down for Legato's WiFi service, which calls it from pa_wifi.sh.
 
 export PATH=$PATH:/usr/bin:/bin:/usr/sbin:/sbin
 

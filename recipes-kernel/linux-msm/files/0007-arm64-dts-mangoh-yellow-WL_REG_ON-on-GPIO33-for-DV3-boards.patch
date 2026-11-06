@@ -1,0 +1,20 @@
+From: Shane de Deuge <shane@scielex.com.au>
+Subject: [PATCH] arm64: dts: mangoh-yellow: WL_REG_ON on GPIO33 for DV3 boards
+
+DV3 boards have WL_REG_ON on WP GPIO33 where later boards have it on the SX1509 expander. Applied
+only with MANGOH_YELLOW_REV = "dv3". Not yet tried on a DV3 board.
+
+Upstream-Status: Inappropriate [board specific]
+---
+--- a/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
++++ b/arch/arm64/boot/dts/qcom/swi-wp-mangoh-yellow.dtsi
+@@ -154,7 +154,8 @@
+ 		/* matches the qcom,vdd-voltage-level set for sdhc_2 in mdm9607-wp76xx.dtsi */
+ 		regulator-min-microvolt = <2850000>;
+ 		regulator-max-microvolt = <2850000>;
+-		gpio = <&sx1509 1 GPIO_ACTIVE_HIGH>;
++		/* DV3 boards: WL_REG_ON is on WP GPIO33 (TLMM 78), not the expander */
++		gpio = <&tlmm_pinmux 78 GPIO_ACTIVE_HIGH>;
+ 		enable-active-high;
+ 		/* the old script waited 2 s after WL_REG_ON; the chip needs well under that */
+ 		startup-delay-us = <250000>;
