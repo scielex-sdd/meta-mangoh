@@ -18,10 +18,13 @@ SRC_URI += "file://0001-arm64-dts-mangoh-yellow-power-the-Cypress-WiFi-on-sdhc_2
 # image is built on purpose: MANGOH_YELLOW_REV = "dv3" in conf/local.conf.
 SRC_URI += "${@bb.utils.contains('MANGOH_YELLOW_REV', 'dv3', 'file://0007-arm64-dts-mangoh-yellow-WL_REG_ON-on-GPIO33-for-DV3-boards.patch', '', d)}"
 
-KBUILD_DEFCONFIG_SNIPPETS_append := " ${THISDIR}/files/brcmfmac.cfg ${THISDIR}/files/mangoh-yellow-sensors.cfg"
+KBUILD_DEFCONFIG_SNIPPETS_append := " ${THISDIR}/files/brcmfmac.cfg ${THISDIR}/files/mangoh-yellow-sensors.cfg ${THISDIR}/files/bluetooth.cfg"
 
 # Load the driver at boot so wlan0 exists before Legato's WiFi service starts.
 KERNEL_MODULE_AUTOLOAD += "brcmfmac"
+
+# The USB-UART of the Cypress chip's Bluetooth: recipes-core/initscripts attaches it when it appears.
+KERNEL_MODULE_AUTOLOAD += "ftdi_sio"
 
 # The drivers of the board's I2C devices. The RTC's stays a module so that it comes up as rtc1,
 # after the PMIC's rtc0, which sets the system clock at boot.
