@@ -18,6 +18,17 @@ SRC_URI += "file://0001-arm64-dts-mangoh-yellow-power-the-Cypress-WiFi-on-sdhc_2
 # image is built on purpose: MANGOH_YELLOW_REV = "dv3" in conf/local.conf.
 SRC_URI += "${@bb.utils.contains('MANGOH_YELLOW_REV', 'dv3', 'file://0007-arm64-dts-mangoh-yellow-WL_REG_ON-on-GPIO33-for-DV3-boards.patch', '', d)}"
 
+# brcmfmac: the driver loads the chip's CLM blob itself, as it has upstream since Linux 4.15.
+#
+# The 4.14 driver does not load brcmfmac43430-sdio.clm_blob, so the firmware has no regulatory data
+# when the driver registers the WiFi device, and the 2.4 GHz band is registered without HT
+# (802.11n). The firmware still connects at HT20, which cfg80211 then counts as an unusable channel:
+# 60 s after every regulatory change (every connection makes one, taking the access point's
+# country) it re-checks the connected channel and drops the link, about once a minute.
+SRC_URI += "file://0008-brcmfmac-add-CLM-download-support.patch \
+            file://0009-brcmfmac-fix-CLM-load-error-for-legacy-chips-when-u.patch \
+           "
+
 KBUILD_DEFCONFIG_SNIPPETS_append := " ${THISDIR}/files/brcmfmac.cfg ${THISDIR}/files/mangoh-yellow-sensors.cfg ${THISDIR}/files/bluetooth.cfg"
 
 # Load the driver at boot so wlan0 exists before Legato's WiFi service starts.
