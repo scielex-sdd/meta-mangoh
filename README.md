@@ -16,7 +16,7 @@ a 43430, so its firmware files use that name.
   make the driver load the chip's CLM blob: without them the link drops about once a minute.
 - `recipes-connectivity/brcmfmac43430-support`: the chip's firmware, its NVRAM file and CLM blob
   in `/lib/firmware/brcm/`, and `/etc/init.d/cywifi`, which Legato's WiFi service calls (through
-  mangOH's `pa_wifi.sh`) to bring `wlan0` up and down.
+  `legato/pa_wifi.sh`, below) to bring `wlan0` up and down.
 - `recipes-core/images`: adds the firmware, the driver, `wpa-supplicant` and `iw` to the image.
 
 **Bluetooth.** The module's CYW20719 (BLE) is behind the FT230X USB-UART on port 2 of the USB hub.
@@ -82,6 +82,23 @@ Clone it into the top of the Linux source tree, next to `meta-swi`. Sierra's `bu
 Run `make` without leaf's environment loaded, or with `MACH` unset. Leaf exports `MACH=mdm9x06`,
 which leaves out the `meta-swi-mdm9x28` layer the WP77xx build needs. Sierra's Makefile picks
 `mdm9x28`/`wp` on its own.
+
+## Legato
+
+Legato's WiFi service drives the chip through a platform adaptor script, `legato/pa_wifi.sh`. Legato builds the
+script into the service, so it is not part of the image: point the system's sdef at it, beside Legato's WiFi
+module.
+
+    #include "$LEGATO_ROOT/modules/WiFi/wifi.sinc"
+
+    buildVars:
+    {
+        LEGATO_WIFI_PA = <path to meta-mangoh>/legato/pa_wifi.sh
+    }
+
+It is mangOH's Cypress script for Legato 21.05 and this layer's kernel. It sets the firmware's country to `XV`, the
+worldwide code, each time WiFi starts: the kernel loads the CLM blob, but the NVRAM file leaves the country at
+`ALL`. It answers `WIFI_GET_DATA`, which Legato 21.05 asks for.
 
 ## DV3 boards
 
