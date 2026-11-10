@@ -28,4 +28,12 @@ do_install() {
     install -D -m 0644 ${WORKDIR}/brcmfmac43430-sdio.txt \
         ${D}${base_libdir}/firmware/brcm/brcmfmac43430-sdio.txt
     install -D -m 0755 ${WORKDIR}/cywifi.sh ${D}${sysconfdir}/init.d/cywifi
+
+    # MANGOH_YELLOW_SECI = "y": WiFi and Bluetooth share the antenna, the WiFi half (cyw20719-support is the
+    # Bluetooth half). btcxwarflags bit 0 lets the firmware move the antenna switch on GPIO_4 for Bluetooth.
+    # Undocumented: found in a WICED NVRAM for the 43364, and measured here. btc_mode=5 gave WiFi the least
+    # added delay of the modes measured, with Bluetooth's signal unchanged. The NVRAM file has CRLF line ends.
+    if ${@bb.utils.contains('MANGOH_YELLOW_SECI', 'y', 'true', 'false', d)}; then
+        printf '\r\nbtcxwarflags=0x1\r\nbtc_mode=5\r\n' >> ${D}${base_libdir}/firmware/brcm/brcmfmac43430-sdio.txt
+    fi
 }

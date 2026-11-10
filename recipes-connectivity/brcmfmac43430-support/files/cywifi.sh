@@ -30,6 +30,9 @@ cy_wifi_start() {
     if [ $? -ne 0 ] ; then
         echo "wlan0 interface UP not working"; exit 127
     fi
+
+    # Where the image has it, turn on the link that shares the antenna with Bluetooth.
+    [ -x /usr/sbin/cyw20719-enable-seci.sh ] && /usr/sbin/cyw20719-enable-seci.sh >/dev/null 2>&1 &
 }
 
 cy_wifi_stop() {
